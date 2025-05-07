@@ -24,15 +24,15 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({ enabled, intensity 
     };
   }, []);
 
-  // Define fixed interval speed for medium intensity
+  // Define fixed interval speed for ultra high intensity
   const getIntervalSpeed = useCallback(() => {
-    return 500; // Increased intensity with faster 500ms interval (was 800ms)
+    return 200; // Ultra high intensity with 200ms interval (was 500ms)
   }, []);
 
   // Generate activity distributed across many chunks
   const simulateWideDistribution = useCallback(() => {
-    // Generate actions across the entire grid - increased intensity
-    const actionCount = 50; // Increased from 30 to 50 actions
+    // Generate actions across the entire grid - extreme intensity
+    const actionCount = 120; // Dramatically increased from 50 to 120 actions
 
     for (let i = 0; i < actionCount; i++) {
       // Create a uniform distribution across the grid
@@ -67,9 +67,9 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({ enabled, intensity 
     }
   }, [simulateBattle]);
 
-  // Generate focused activity in several chunks to create moderate hotspots
+  // Generate focused activity in several chunks to create intensive hotspots
   const simulateFocusedHotspots = useCallback(() => {
-    // Create more hotspots - increased from 5 to 8 fixed hotspots
+    // Create many more hotspots - increased from 8 to 15 fixed hotspots
     const hotspotChunks = [
       { x: 2, y: 3 },
       { x: 7, y: 7 },
@@ -78,11 +78,18 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({ enabled, intensity 
       { x: 5, y: 5 },
       { x: 4, y: 8 },
       { x: 3, y: 6 },
-      { x: 8, y: 2 }
+      { x: 8, y: 2 },
+      { x: 0, y: 4 },
+      { x: 6, y: 3 },
+      { x: 2, y: 8 },
+      { x: 7, y: 1 },
+      { x: 4, y: 4 },
+      { x: 9, y: 5 },
+      { x: 5, y: 9 }
     ];
 
-    // Add more random chunks for variation - increased from 2 to 4
-    for (let i = 0; i < 4; i++) {
+    // Add many more random chunks for variation - increased from 4 to 8
+    for (let i = 0; i < 8; i++) {
       const randomChunkX = Math.floor(Math.random() * CHUNK_SIZE);
       const randomChunkY = Math.floor(Math.random() * CHUNK_SIZE);
 
@@ -91,13 +98,13 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({ enabled, intensity 
       }
     }
 
-    // For each hotspot chunk, generate more intense activity
+    // For each hotspot chunk, generate extremely intense activity
     for (const chunk of hotspotChunks) {
       const baseX = chunk.x * CELLS_PER_CHUNK;
       const baseY = chunk.y * CELLS_PER_CHUNK;
 
-      // Increased action count per hotspot from 8 to 12
-      const actionCount = 12;
+      // Greatly increased action count per hotspot from 12 to 25
+      const actionCount = 25;
 
       for (let i = 0; i < actionCount; i++) {
         // Generate actions within the chunk
@@ -106,8 +113,8 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({ enabled, intensity 
         const x = baseX + offsetX;
         const y = baseY + offsetY;
 
-        // 15% chance to place ship, 85% to fire (increased ship placement from 10% to 15%)
-        if (Math.random() < 0.15) {
+        // More ship placements - 20% chance to place ship (increased from 15%)
+        if (Math.random() < 0.2) {
           // Place ship
           const shipSize = 2 + Math.floor(Math.random() * 3);
           const isHorizontal = Math.random() > 0.5;
@@ -135,6 +142,13 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({ enabled, intensity 
     }
   }, [simulateBattle]);
 
+  // Run concurrent simulations for even more intensity
+  const simulateConcurrentActivity = useCallback(() => {
+    // Run both distribution patterns concurrently
+    simulateWideDistribution();
+    simulateFocusedHotspots();
+  }, [simulateWideDistribution, simulateFocusedHotspots]);
+
   // Handle simulation start/stop and running
   useEffect(() => {
     // Stop any existing interval first
@@ -151,22 +165,25 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({ enabled, intensity 
     // Start simulation
     setSimulationRunning(true);
 
-    // Initial simulation - generate more intense activity to start
+    // Initial simulation - generate extreme initial activity
     simulateWideDistribution();
-    simulateWideDistribution(); // Run twice for more initial action
+    simulateWideDistribution();
+    simulateWideDistribution(); // Run three times for massive initial action
 
-    // Stronger initial burst - increased from 3 to 5 hotspot runs
-    for (let i = 0; i < 5; i++) {
+    // Extreme initial burst - run 7 hotspot simulations (increased from 5)
+    for (let i = 0; i < 7; i++) {
       simulateFocusedHotspots();
     }
 
-    // Create an interval to regularly simulate battle actions
+    // Create an interval to regularly simulate battle actions at a very high frequency
     intervalIdRef.current = window.setInterval(() => {
       if (enabled) {
-        // More even balance - 50/50 instead of 60/40
-        if (Math.random() < 0.5) {
+        // Very high chance of concurrent activity
+        if (Math.random() < 0.7) { // 70% chance of extreme concurrent activity
+          simulateConcurrentActivity();
+        } else if (Math.random() < 0.7) { // 21% chance (0.7 * 0.3) of wide distribution
           simulateWideDistribution();
-        } else {
+        } else { // 9% chance of focused hotspots only
           simulateFocusedHotspots();
         }
       }
@@ -178,18 +195,18 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({ enabled, intensity 
         intervalIdRef.current = null;
       }
     };
-  }, [enabled, getIntervalSpeed, simulateWideDistribution, simulateFocusedHotspots]);
+  }, [enabled, getIntervalSpeed, simulateWideDistribution, simulateFocusedHotspots, simulateConcurrentActivity]);
 
   return (
     <div className="w-full bg-gray-800 rounded-md p-3 mb-2">
       <div className="flex items-center justify-between">
         <h3 className="text-md font-medium">Battle Simulation</h3>
-        <div className={`h-2 w-2 rounded-full ${simulationRunning ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+        <div className={`h-2 w-2 rounded-full ${simulationRunning ? 'bg-red-500 animate-ping' : 'bg-red-500'}`} />
       </div>
       <div className="mt-2 text-sm text-gray-400">
         {simulationRunning ? (
           <p>
-            Running with high battle activity
+            Running with extreme battle activity
           </p>
         ) : (
           <p>Simulation is currently disabled</p>

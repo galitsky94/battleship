@@ -16,14 +16,14 @@ import {
 } from '../utils/grid';
 import { useTeamSelection } from './TeamSelectionContext';
 
-// Constants for heat map decay
-const DECAY_INTERVAL = 10000; // Check for decay only every 10 seconds
-const ACTIVITY_LIFETIME = 120000; // Full activity persists for 2 minutes
-const ACTIVITY_EXTENDED_LIFETIME = 240000; // Extended visibility for up to 4 minutes
-const NO_DECAY_PERIOD = 60000; // No decay at all for the first minute
-const SUPER_SLOW_DECAY_RATE = 0.999; // Almost no decay (99.9% retention)
-const SLOW_DECAY_RATE = 0.98; // Slow decay (98% retention)
-const FINAL_DECAY_RATE = 0.95; // Final decay (95% retention)
+// Constants for heat map decay - Updated for more dynamic behavior
+const DECAY_INTERVAL = 5000; // Check for decay every 5 seconds (was 10 seconds)
+const ACTIVITY_LIFETIME = 90000; // Full activity persists for 1.5 minutes (was 2 minutes)
+const ACTIVITY_EXTENDED_LIFETIME = 180000; // Extended visibility for up to 3 minutes (was 4 minutes)
+const NO_DECAY_PERIOD = 30000; // No decay for first 30 seconds (was 60 seconds)
+const SUPER_SLOW_DECAY_RATE = 0.995; // Very slight decay (99.5% retention) - was 99.9%
+const SLOW_DECAY_RATE = 0.96; // Moderate decay (96% retention) - was 98%
+const FINAL_DECAY_RATE = 0.92; // Faster decay (92% retention) - was 95%
 
 interface BattleContextType {
   // Team grids

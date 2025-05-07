@@ -82,6 +82,7 @@ bun run preview
 
 ## Version History
 
+- **v65**: Ultra-Intense Battle Simulation with extreme activity frequency, vibrant visual effects, and dynamic battle zones.
 - **v64**: Enhanced Battle Simulation with more intense activity, visual effects, and pulsing hot zones.
 - **v63**: UI Improvement - Removed Simulation Stats display for cleaner interface.
 - **v62**: UI Refinement - Removed Game Mode Display from Controls component for cleaner interface.

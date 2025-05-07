@@ -43,21 +43,21 @@ const Grid: React.FC<GridProps> = ({ onCellClick }) => {
   const totalGridWidth = CHUNK_SIZE * CELLS_PER_CHUNK * cellSize;
   const totalGridHeight = CHUNK_SIZE * CELLS_PER_CHUNK * cellSize;
 
-  // Get color for heat map based on heat level (more intense colors)
+  // Get color for heat map based on heat level (much more intense colors)
   const getHeatMapColor = useCallback((heatLevel: number): string => {
     switch (heatLevel) {
       case 3: // Hot - top level activity chunks (red)
-        return 'rgba(255, 40, 40, 0.15)'; // Increased opacity from 0.10 to 0.15
+        return 'rgba(255, 30, 30, 0.25)'; // Much stronger red with 25% opacity
       case 2: // Warm - medium activity chunks (yellow/orange)
-        return 'rgba(255, 180, 20, 0.15)'; // Increased opacity from 0.10 to 0.15
+        return 'rgba(255, 160, 10, 0.2)'; // Stronger yellow/orange with 20% opacity
       case 1: // Cool - low activity chunks (blue)
-        return 'rgba(40, 120, 255, 0.12)'; // Increased opacity from 0.10 to 0.12
+        return 'rgba(30, 120, 255, 0.18)'; // Stronger blue with 18% opacity
       default: // Not active
         return 'rgba(0, 0, 0, 0)'; // Transparent
     }
   }, []);
 
-  // Calculate cooldown effect color based on time remaining
+  // Calculate cooldown effect color based on time remaining - more vibrant
   const getCooldownColor = useCallback((cooldownUntil: number | undefined): string => {
     if (!cooldownUntil) return 'rgba(0, 0, 0, 0)'; // No cooldown
 
@@ -69,8 +69,8 @@ const Grid: React.FC<GridProps> = ({ onCellClick }) => {
     const remainingTime = cooldownUntil - now;
     const progress = remainingTime / totalDuration;
 
-    // Fade from strong red to transparent as cooldown progresses
-    const opacity = Math.max(0, Math.min(0.6, progress * 0.6));
+    // More vibrant red that fades faster
+    const opacity = Math.max(0, Math.min(0.8, progress * 0.8)); // Increased max opacity from 0.6 to 0.8
     return `rgba(255, 0, 0, ${opacity.toFixed(2)})`;
   }, []);
 
@@ -189,26 +189,48 @@ const Grid: React.FC<GridProps> = ({ onCellClick }) => {
         if (cell.hit) {
           // Cell has been hit - draw appropriate markers
           if (cell.occupied) {
-            // Hit ship - draw a more visible explosion/damage mark
+            // Hit ship - draw a more vivid explosion/damage mark
             const centerX = canvasX + cellSize / 2;
             const centerY = canvasY + cellSize / 2;
-            const radius = cellSize * 0.35; // Increased radius from 0.3 to 0.35
+            const radius = cellSize * 0.4; // Significantly larger radius (from 0.35 to 0.4)
 
-            // Draw explosion with brighter color
-            ctx.fillStyle = 'rgba(255, 120, 50, 0.7)'; // Brighter orange with higher opacity (0.6 to 0.7)
+            // Draw more vibrant explosion
+            const gradient = ctx.createRadialGradient(
+              centerX, centerY, 0,
+              centerX, centerY, radius
+            );
+            gradient.addColorStop(0, 'rgba(255, 255, 150, 0.9)'); // Bright yellow center
+            gradient.addColorStop(0.3, 'rgba(255, 100, 50, 0.85)'); // Orange-red middle
+            gradient.addColorStop(1, 'rgba(180, 20, 20, 0)'); // Fading red edge
+
+            ctx.fillStyle = gradient;
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
             ctx.fill();
 
-            // Add red cross with thicker lines
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; // Higher opacity (0.8 to 0.9)
-            ctx.lineWidth = cellSize * 0.12; // Thicker lines (0.1 to 0.12)
+            // Add white cross with even thicker lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 1.0)'; // Full opacity
+            ctx.lineWidth = cellSize * 0.15; // Even thicker lines (from 0.12 to 0.15)
             ctx.beginPath();
             ctx.moveTo(canvasX + cellSize * 0.25, canvasY + cellSize * 0.25);
             ctx.lineTo(canvasX + cellSize * 0.75, canvasY + cellSize * 0.75);
             ctx.moveTo(canvasX + cellSize * 0.75, canvasY + cellSize * 0.25);
             ctx.lineTo(canvasX + cellSize * 0.25, canvasY + cellSize * 0.75);
             ctx.stroke();
+
+            // Add an outer glow for more impact
+            const outerRadius = radius * 1.5;
+            const outerGlow = ctx.createRadialGradient(
+              centerX, centerY, radius * 0.8,
+              centerX, centerY, outerRadius
+            );
+            outerGlow.addColorStop(0, 'rgba(255, 100, 0, 0.4)');
+            outerGlow.addColorStop(1, 'rgba(255, 0, 0, 0)');
+
+            ctx.fillStyle = outerGlow;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
+            ctx.fill();
           } else {
             // Missed shot - draw water splash
             const centerX = canvasX + cellSize / 2;
@@ -288,9 +310,12 @@ const Grid: React.FC<GridProps> = ({ onCellClick }) => {
       }
     }
 
-    // Draw heat map overlays with more visible colors and clear chunk boundaries
+    // Draw heat map overlays with more vibrant colors and pulsing effects
     if (showHeatMap) {
       ctx.globalAlpha = 1.0; // Reset alpha to ensure proper rendering
+
+      // Get current time for animation
+      const now = Date.now();
 
       for (const chunk of chunks) {
         if (chunk.heatLevel >= 1) {
@@ -324,16 +349,64 @@ const Grid: React.FC<GridProps> = ({ onCellClick }) => {
           ctx.fillStyle = getHeatMapColor(chunk.heatLevel);
           ctx.fillRect(drawX, drawY, drawSize, drawSize);
 
-          // Add a subtle pulsing effect for hot chunks
-          if (chunk.heatLevel === 3) {
-            // Create a gradient for hottest chunks
-            const pulseIntensity = 0.5 + 0.5 * Math.sin(Date.now() / 300); // Subtle pulse based on time
+          // Enhanced pulsing effects based on heat level
+          if (chunk.heatLevel >= 2) { // Apply to both hot and warm chunks
+            // Create a faster, more pronounced pulsing effect
+            const pulseSpeed = chunk.heatLevel === 3 ? 150 : 250; // Faster for hotter chunks
+            const pulseIntensity = 0.4 + 0.6 * Math.sin(now / pulseSpeed); // More pronounced pulse
+
+            // Different gradient patterns for hot vs warm
+            if (chunk.heatLevel === 3) {
+              // Hot chunks get a fiery pulsing center
+              const gradient = ctx.createRadialGradient(
+                drawX + drawSize/2, drawY + drawSize/2, 0,
+                drawX + drawSize/2, drawY + drawSize/2, drawSize * 0.7 // Larger radius
+              );
+              gradient.addColorStop(0, `rgba(255, 80, 30, ${0.12 * pulseIntensity})`); // Brighter center
+              gradient.addColorStop(0.7, `rgba(255, 50, 0, ${0.07 * pulseIntensity})`);
+              gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+              ctx.fillStyle = gradient;
+              ctx.fillRect(drawX, drawY, drawSize, drawSize);
+
+              // Add flickering effect (random variation)
+              if (Math.random() > 0.7) {
+                // Random spark/highlight
+                const sparkX = drawX + Math.random() * drawSize;
+                const sparkY = drawY + Math.random() * drawSize;
+                const sparkSize = drawSize * (0.1 + Math.random() * 0.1);
+
+                const sparkGlow = ctx.createRadialGradient(
+                  sparkX, sparkY, 0,
+                  sparkX, sparkY, sparkSize
+                );
+                sparkGlow.addColorStop(0, 'rgba(255, 200, 50, 0.2)');
+                sparkGlow.addColorStop(1, 'rgba(255, 100, 0, 0)');
+
+                ctx.fillStyle = sparkGlow;
+                ctx.beginPath();
+                ctx.arc(sparkX, sparkY, sparkSize, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            } else {
+              // Warm chunks get a pulsing pattern
+              const gradient = ctx.createRadialGradient(
+                drawX + drawSize/2, drawY + drawSize/2, 0,
+                drawX + drawSize/2, drawY + drawSize/2, drawSize/2
+              );
+              gradient.addColorStop(0, `rgba(255, 150, 30, ${0.08 * pulseIntensity})`);
+              gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+              ctx.fillStyle = gradient;
+              ctx.fillRect(drawX, drawY, drawSize, drawSize);
+            }
+          } else if (chunk.heatLevel === 1) {
+            // Subtle pulse for cool areas
+            const pulseIntensity = 0.3 + 0.3 * Math.sin(now / 350);
             const gradient = ctx.createRadialGradient(
               drawX + drawSize/2, drawY + drawSize/2, 0,
               drawX + drawSize/2, drawY + drawSize/2, drawSize/2
             );
-            gradient.addColorStop(0, `rgba(255, 80, 50, ${0.05 * pulseIntensity})`);
-            gradient.addColorStop(1, 'rgba(255, 80, 50, 0)');
+            gradient.addColorStop(0, `rgba(40, 150, 255, ${0.05 * pulseIntensity})`);
+            gradient.addColorStop(1, 'rgba(40, 100, 255, 0)');
             ctx.fillStyle = gradient;
             ctx.fillRect(drawX, drawY, drawSize, drawSize);
           }
@@ -341,11 +414,21 @@ const Grid: React.FC<GridProps> = ({ onCellClick }) => {
           // Restore context after clipping
           ctx.restore();
 
-          // Draw a more visible border to make chunk boundaries clearer
-          ctx.strokeStyle = chunk.heatLevel === 3
-            ? 'rgba(200, 180, 220, 0.35)'  // More visible for hot chunks
-            : 'rgba(180, 180, 220, 0.3)';  // Slightly more visible for other active chunks
-          ctx.lineWidth = chunk.heatLevel === 3 ? 0.85 : 0.75; // Thicker for hot chunks
+          // Draw more pronounced borders for active chunks
+          if (chunk.heatLevel === 3) {
+            // Hot chunks get brighter, animated borders
+            const borderPulse = 0.6 + 0.4 * Math.sin(now / 200);
+            ctx.strokeStyle = `rgba(220, 180, 220, ${0.4 * borderPulse})`;
+            ctx.lineWidth = 1.0;
+          } else if (chunk.heatLevel === 2) {
+            // Warm chunks get moderately bright borders
+            ctx.strokeStyle = 'rgba(200, 180, 180, 0.35)';
+            ctx.lineWidth = 0.85;
+          } else {
+            // Cool chunks get subtle borders
+            ctx.strokeStyle = 'rgba(180, 180, 220, 0.3)';
+            ctx.lineWidth = 0.75;
+          }
           ctx.strokeRect(drawX, drawY, drawSize, drawSize);
         }
       }
